@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfs-server
+  namespace: nfs-server
+  labels:
+    app.kubernetes.io/instance: nfs-server
+    app.kubernetes.io/name: nfs-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      role: nfs-server
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        role: nfs-server
+    spec:
+      imagePullSecrets:
+        - name: dockerconfigjson-github-com
+      containers:
+      - name: nfs-server
+        image: ghcr.io/gdha/pi4-nfs-server-alpine:v1.5
+        imagePullPolicy: IfNotPresent
+        tty: true
+        ports:
+        - name: nfs
+          containerPort: 2049
+          protocol: TCP
+        - name: mountd
+          containerPort: 20048
+          protocol: TCP
+        - name: rpcbind
+          containerPort: 111
+          protocol: TCP
+        resources: {}
+        securityContext:
+          capabilities:
+            add: ["SYS_ADMIN", "SETPCAP"]
+          runAsNonRoot: false
+          privileged: true
+          allowPrivilegeEscalation: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /exports
+          name: nfsstore
+        - mountPath: /proc
+          name: bind-mount-proc
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: nfsstore
+        persistentVolumeClaim:
+          claimName: pvcfornfs
+      - name: bind-mount-proc
+        hostPath:
+          path: /proc
+          type: Directory

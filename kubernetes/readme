@@ -1,0 +1,118 @@
+## Build the nfs-server kubernetes environment using a longhorn PVC
+
+$ kubectl create -f nfs-server-secret.yaml
+secret/nfs-server created
+$ kubectl create -f ghcr-secret.yaml
+secret/dockerconfigjson-github-com created
+
+$ kubectl apply -f nfs-server-namespace.yaml
+namespace/nfs-server created
+$ kubectl apply -f nfs-server-pvc.yaml
+persistentvolumeclaim/pvcfornfs created
+
+$ kubectl create -f nfs-server-deployment.yaml
+deployment.apps/nfs-server created
+
+$ kubectl logs -n nfs-server nfs-server-f48df7cdc-64ssv
+Displaying /etc/exports contents:
+/exports *(rw,fsid=0,async,no_subtree_check,no_auth_nlm,insecure,no_root_squash)
+
+Starting rpcbind...
+Displaying rpcbind status...
+   program version netid     address                service    owner
+    100000    4    tcp6      ::.0.111               -          superuser
+    100000    3    tcp6      ::.0.111               -          superuser
+    100000    4    udp6      ::.0.111               -          superuser
+    100000    3    udp6      ::.0.111               -          superuser
+    100000    4    tcp       0.0.0.0.0.111          -          superuser
+    100000    3    tcp       0.0.0.0.0.111          -          superuser
+    100000    2    tcp       0.0.0.0.0.111          -          superuser
+    100000    4    udp       0.0.0.0.0.111          -          superuser
+    100000    3    udp       0.0.0.0.0.111          -          superuser
+    100000    2    udp       0.0.0.0.0.111          -          superuser
+    100000    4    local     /var/run/rpcbind.sock  -          superuser
+    100000    3    local     /var/run/rpcbind.sock  -          superuser
+Starting NFS in the background...
+rpc.nfsd: knfsd is currently down
+rpc.nfsd: Writing version string to kernel: -2 +3
+rpc.nfsd: Created AF_INET TCP socket.
+rpc.nfsd: Created AF_INET6 TCP socket.
+Exporting File System...
+exporting *:/exports
+/exports      	<world>
+Starting Mountd in the background...These
+Startup successful.
+
+$ kubectl describe pod -n nfs-server nfs-server-f48df7cdc-64ssv
+Name:             nfs-server-f48df7cdc-64ssv
+Namespace:        nfs-server
+Priority:         0
+Service Account:  default
+Node:             n4/192.168.0.204
+Start Time:       Wed, 15 Feb 2023 11:18:49 +0100
+Labels:           pod-template-hash=f48df7cdc
+                  role=nfs-server
+Annotations:      <none>
+Status:           Running
+IP:               10.42.1.125
+IPs:
+  IP:           10.42.1.125
+Controlled By:  ReplicaSet/nfs-server-f48df7cdc
+Containers:
+  nfs-server:
+    Container ID:   containerd://5170e3f1d73fa16896bda1294b66c05a62cc6d0300fc7b08c4edfe5ff632a38e
+    Image:          ghcr.io/gdha/pi4-nfs-server-alpine:v1.5
+    Image ID:       ghcr.io/gdha/pi4-nfs-server-alpine@sha256:b0c89e9476ab825a7eb9dfeaa0e6e925c6c49363698fc0e13a8143b7f13ff9ec
+    Ports:          2049/TCP, 20048/TCP, 111/TCP
+    Host Ports:     0/TCP, 0/TCP, 0/TCP
+    State:          Running
+      Started:      Wed, 15 Feb 2023 11:19:16 +0100
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /exports from nfsstore (rw)
+      /proc from bind-mount-proc (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-blq9r (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             True 
+  ContainersReady   True 
+  PodScheduled      True 
+Volumes:
+  nfsstore:
+    Type:       PersistentVolumeClaim (a reference to a PersistentVolumeClaim in the same namespace)
+    ClaimName:  pvcfornfs
+    ReadOnly:   false
+  bind-mount-proc:
+    Type:          HostPath (bare host directory volume)
+    Path:          /proc
+    HostPathType:  Directory
+  kube-api-access-blq9r:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason                  Age   From                     Message
+  ----    ------                  ----  ----                     -------
+  Normal  Scheduled               73s   default-scheduler        Successfully assigned nfs-server/nfs-server-f48df7cdc-64ssv to n4
+  Normal  SuccessfulAttachVolume  63s   attachdetach-controller  AttachVolume.Attach succeeded for volume "pvc-96c4eb49-2c8e-4b0d-8343-b6808968d962"
+  Normal  Pulling                 61s   kubelet                  Pulling image "ghcr.io/gdha/pi4-nfs-server-alpine:v1.5"
+  Normal  Pulled                  46s   kubelet                  Successfully pulled image "ghcr.io/gdha/pi4-nfs-server-alpine:v1.5" in 14.540728499s (14.540781627s including waiting)
+  Normal  Created                 46s   kubelet                  Created container nfs-server
+  Normal  Started                 46s   kubelet                  Started container nfs-server
+
+
+## An internal Kubernetes NFS server is now available:
+
+$ sudo mount 10.42.1.125:/exports /mnt
+$ mount -v | grep nfs
+10.42.1.125:/exports on /mnt type nfs (rw,relatime,vers=3,rsize=524288,wsize=524288,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=10.42.1.125,mountvers=3,mountport=57351,mountproto=udp,local_lock=none,addr=10.42.1.125)
+

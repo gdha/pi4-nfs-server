@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nfs-server
+  labels:
+    app.kubernetes.io/name: nfs-server
+    app.kubernetes.io/instance: nfs-server
