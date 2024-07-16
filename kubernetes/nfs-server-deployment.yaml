@@ -25,7 +25,7 @@ spec:
         - name: dockerconfigjson-github-com
       containers:
       - name: nfs-server
-        image: ghcr.io/gdha/pi4-nfs-server-alpine:v1.5
+        image: ghcr.io/gdha/pi4-nfs-server-alpine:v1.6
         imagePullPolicy: IfNotPresent
         tty: true
         ports:
