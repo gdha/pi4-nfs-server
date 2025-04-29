@@ -1,12 +1,22 @@
 ## Build the nfs-server kubernetes environment using a longhorn PVC
 
+$ kubectl apply -f nfs-server-namespace.yaml
+namespace/nfs-server created
+
 $ kubectl create -f nfs-server-secret.yaml
 secret/nfs-server created
+
 $ kubectl create -f ghcr-secret.yaml
 secret/dockerconfigjson-github-com created
 
-$ kubectl apply -f nfs-server-namespace.yaml
-namespace/nfs-server created
+$ kubectl get secrets -n nfs-server nfs-server
+NAME         TYPE     DATA   AGE
+nfs-server   Opaque   0      7m13s
+
+$ kubectl get secrets -n nfs-server dockerconfigjson-github-com
+NAME                          TYPE                             DATA   AGE
+dockerconfigjson-github-com   kubernetes.io/dockerconfigjson   1      7m7s
+
 $ kubectl apply -f nfs-server-pvc.yaml
 persistentvolumeclaim/pvcfornfs created
 
