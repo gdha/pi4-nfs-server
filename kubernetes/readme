@@ -1,5 +1,12 @@
 ## Build the nfs-server kubernetes environment using a longhorn PVC
 
+$ mkdir .hidden
+$ kubectl create secret docker-registry dockerconfigjson-github-com --docker-server=ghcr.io  --docker-username=gdha --docker-password=$(cat ~/.ghcr-token) --dry-run=client -oyaml >.hidden/ghcr-secret.yaml
+
+Edit ghcr-secret.yaml and add namespace: celsius in the metadata section.
+
+$ ln -s .hidden/ghcr-secret.yaml ghcr-secret.yaml
+
 $ kubectl apply -f nfs-server-namespace.yaml
 namespace/nfs-server created
 
